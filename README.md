@@ -18,7 +18,7 @@
 
 Aplikasi ini telah di-deploy menggunakan Vercel dan dapat diakses secara publik melalui tautan di bawah ini:
 
-**➡️ [https://[NAMA-PROYEK-VERCEL-ANDA].vercel.app/](https://[NAMA-PROYEK-VERCEL-ANDA].vercel.app/)**
+**➡️ [https://modul5-ppb-kel4.vercel.app/](https://modul5-ppb-kel4.vercel.app/)**
 
 ---
 
@@ -63,8 +63,8 @@ Proyek ini mengimplementasikan fungsionalitas **CRUD** (Create, Read, Update, De
 
 1.  *Clone* repository ini:
     ```bash
-    git clone https://[LINK-GITHUB-ANDA].git
-    cd [NAMA-FOLDER-PROYEK]
+    git clone https://github.com/rizasaputra29/modul5-ppb.git
+    cd modul5-ppb
     ```
 2.  Install semua *dependencies*:
     ```bash
