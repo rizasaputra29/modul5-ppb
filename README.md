@@ -9,7 +9,7 @@
 <p align="center">
   Proyek Progressive Web App (PWA) untuk Praktikum Pemrograman Perangkat Bergerak (PPB)
   <br />
-  <strong>Teknik Komputer, Universitas Diponegoro - Shift 1</strong>
+  <strong>Teknik Komputer, Universitas Diponegoro - Kelompok 4 Shift 1</strong>
 </p>
 
 ---
