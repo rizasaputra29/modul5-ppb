@@ -24,14 +24,16 @@ export const getUserProfile = () => {
     }
     // Return default profile with user identifier
     return {
-      username: 'Pengguna',
+      // --- MODIFIKASI DI SINI ---
+      username: 'Muhammad Riza Saputra', 
       avatar: null,
       bio: '',
       userId: getUserIdentifier()
     };
   } catch (error) {
     return {
-      username: 'Pengguna',
+      // --- MODIFIKASI DI SINI ---
+      username: 'Muhammad Riza Saputra',
       avatar: null,
       bio: '',
       userId: getUserIdentifier()
@@ -76,7 +78,8 @@ export const updateAvatar = (avatarBase64) => {
 export const updateUsername = (username) => {
   try {
     const profile = getUserProfile();
-    profile.username = username.trim() || 'Pengguna';
+    // --- MODIFIKASI DI SINI ---
+    profile.username = username.trim() || 'Muhammad Riza Saputra'; // Fallback jika input kosong
     return saveUserProfile(profile);
   } catch (error) {
     return { success: false, message: error.message };

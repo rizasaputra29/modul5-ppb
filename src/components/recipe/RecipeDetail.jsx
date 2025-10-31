@@ -2,96 +2,47 @@
 import { useState } from 'react';
 import { useRecipe } from '../../hooks/useRecipes';
 import { useReviews, useCreateReview } from '../../hooks/useReviews';
-import { useIsFavorited } from '../../hooks/useFavorites';
 import { getUserIdentifier } from '../../hooks/useFavorites';
 import { formatDate, getDifficultyColor, getStarRating } from '../../utils/helpers';
-import { ArrowLeft, Heart, Clock, Users, ChefHat, Star, Send, Edit, Trash2 } from 'lucide-react';
+import { ArrowLeft, Clock, Users, ChefHat, Star, Send, Edit, Trash2, Share2, Check } from 'lucide-react';
 import recipeService from '../../services/recipeService';
 import ConfirmModal from '../modals/ConfirmModals';
 import FavoriteButton from '../common/FavoriteButton';
 import userService from '../../services/userService';
 
+// --- DEFINISI WARNA PINDAH KE LUAR KOMPONEN ---
+const categoryColors = {
+  makanan: {
+    primary: 'blue',
+    gradient: 'from-blue-50 via-white to-indigo-50',
+    text: 'text-blue-700',
+    bg: 'bg-blue-100',
+    border: 'border-blue-400',
+    hover: 'hover:bg-blue-50',
+    ring: 'ring-blue-500'
+  },
+  minuman: {
+    primary: 'green',
+    gradient: 'from-green-50 via-white to-cyan-50',
+    text: 'text-green-700',
+    bg: 'bg-green-100',
+    border: 'border-green-400',
+    hover: 'hover:bg-green-50',
+    ring: 'ring-green-500'
+  },
+};
+
 export default function RecipeDetail({ recipeId, onBack, onEdit, category = 'makanan' }) {
   const { recipe, loading: recipeLoading, error: recipeError } = useRecipe(recipeId);
-  const { reviews, loading: reviewsLoading, refetch: refetchReviews } = useReviews(recipeId);
-  const { createReview, loading: createLoading } = useCreateReview();
-  const { isFavorited, loading: favLoading, toggleFavorite } = useIsFavorited(recipeId);
-  const [rating, setRating] = useState(5);
-  const [comment, setComment] = useState('');
-  const [showReviewForm, setShowReviewForm] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [deleting, setDeleting] = useState(false);
-
-  const categoryColors = {
-    makanan: {
-      primary: 'blue',
-      gradient: 'from-blue-50 via-white to-indigo-50',
-      text: 'text-blue-700',
-      bg: 'bg-blue-100',
-      border: 'border-blue-400',
-      hover: 'hover:bg-blue-50',
-      ring: 'ring-blue-500'
-    },
-    minuman: {
-      primary: 'green',
-      gradient: 'from-green-50 via-white to-cyan-50',
-      text: 'text-green-700',
-      bg: 'bg-green-100',
-      border: 'border-green-400',
-      hover: 'hover:bg-green-50',
-      ring: 'ring-green-500'
-    },
-  };
-  const colors = categoryColors[category] || categoryColors.makanan;
-
-  const handleSubmitReview = async (e) => {
-    e.preventDefault();
-    // Get username from user profile
-    const userProfile = userService.getUserProfile();
-    const reviewData = {
-      user_identifier: userProfile.username || getUserIdentifier(),
-      rating,
-      comment: comment.trim(),
-    };
-    const success = await createReview(recipeId, reviewData);
-    if (success) {
-      setComment('');
-      setRating(5);
-      setShowReviewForm(false);
-      refetchReviews();
-    }
-  };
-
-  const handleToggleFavorite = async () => {
-    await toggleFavorite();
-  };
-
-  const handleDeleteRecipe = async () => {
-    try {
-      setDeleting(true);
-      const result = await recipeService.deleteRecipe(recipeId);
-      if (result.success) {
-        alert('Resep berhasil dihapus!');
-        setShowDeleteModal(false);
-        if (onBack) {
-          onBack();
-        }
-      } else {
-        throw new Error(result.message || 'Gagal menghapus resep');
-      }
-    } catch (err) {
-      console.error('Delete recipe error:', err);
-      alert(err.message || 'Terjadi kesalahan saat menghapus resep');
-    } finally {
-      setDeleting(false);
-    }
-  };
-
+  
+  // --- GUARD CLAUSES (PENJAGA) DIPINDAH KE ATAS ---
+  
   if (recipeLoading) {
+    const fallbackColor = categoryColors[category] || categoryColors.makanan;
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className={`animate-spin rounded-full h-12 w-12 border-b-2 border-${colors.primary}-600 mx-auto`}></div>
+          <div className={`animate-spin rounded-full h-12 w-12 border-b-2 border-${fallbackColor.primary}-600 mx-auto`}></div>
           <p className="mt-4 text-slate-600">Memuat resep...</p>
         </div>
       </div>
@@ -118,13 +69,14 @@ export default function RecipeDetail({ recipeId, onBack, onEdit, category = 'mak
   }
 
   if (!recipe) {
+    const fallbackColor = categoryColors[category] || categoryColors.makanan;
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
         <div className="text-center">
           <p className="text-slate-600">Resep tidak ditemukan</p>
           <button
             onClick={onBack}
-            className={`mt-4 px-4 py-2 bg-${colors.primary}-600 text-white rounded-lg hover:bg-${colors.primary}-700 transition-colors`}
+            className={`mt-4 px-4 py-2 bg-${fallbackColor.primary}-600 text-white rounded-lg hover:bg-${fallbackColor.primary}-700 transition-colors`}
           >
             Kembali
           </button>
@@ -133,9 +85,88 @@ export default function RecipeDetail({ recipeId, onBack, onEdit, category = 'mak
     );
   }
 
+  // --- LOGIKA LAINNYA DIJALANKAN SETELAH GUARD ---
+  
+  const { reviews, loading: reviewsLoading, refetch: refetchReviews } = useReviews(recipeId);
+  const { createReview, loading: createLoading } = useCreateReview();
+  const [rating, setRating] = useState(5);
+  const [comment, setComment] = useState('');
+  const [showReviewForm, setShowReviewForm] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const recipeCategory = recipe.category || category;
+  const colors = categoryColors[recipeCategory] || categoryColors.makanan;
+
+  const handleSubmitReview = async (e) => {
+    e.preventDefault();
+    const userProfile = userService.getUserProfile();
+    const reviewData = {
+      user_identifier: userProfile.username || getUserIdentifier(),
+      rating,
+      comment: comment.trim(),
+    };
+    const success = await createReview(recipeId, reviewData);
+    if (success) {
+      setComment('');
+      setRating(5);
+      setShowReviewForm(false);
+      refetchReviews();
+    }
+  };
+
+  const handleDeleteRecipe = async () => {
+    try {
+      setDeleting(true);
+      const result = await recipeService.deleteRecipe(recipeId);
+      if (result.success) {
+        alert('Resep berhasil dihapus!');
+        setShowDeleteModal(false);
+        if (onBack) {
+          onBack();
+        }
+      } else {
+        throw new Error(result.message || 'Gagal menghapus resep');
+      }
+    } catch (err) {
+      console.error('Delete recipe error:', err);
+      alert(err.message || 'Terjadi kesalahan saat menghapus resep');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const handleShare = async () => {
+    const shareUrl = `${window.location.origin}?recipeId=${recipeId}`;
+    const shareTitle = recipe?.name || 'Lihat Resep Lezat Ini!';
+    const shareText = `Saya menemukan resep ${shareTitle} di Resep Nusantara. Coba lihat!`;
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: shareTitle,
+          text: shareText,
+          url: shareUrl,
+        });
+      } catch (err) {
+        console.error('Gagal share:', err);
+      }
+    } else {
+      try {
+        await navigator.clipboard.writeText(shareUrl);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000); 
+      } catch (err) {
+        console.error('Gagal menyalin ke clipboard:', err);
+        alert('Gagal menyalin link. Silakan salin URL dari browser Anda.');
+      }
+    }
+  };
+
+
   return (
     <div className={`min-h-screen bg-gradient-to-br ${colors.gradient} pb-20 md:pb-8`}>
-      {/* Delete Confirmation Modal */}
       <ConfirmModal
         isOpen={showDeleteModal}
         onClose={() => setShowDeleteModal(false)}
@@ -147,7 +178,6 @@ export default function RecipeDetail({ recipeId, onBack, onEdit, category = 'mak
         variant="danger"
         isLoading={deleting}
       />
-      {/* Header */}
       <div className="sticky top-0 z-10 bg-white/80 backdrop-blur-md border-b border-slate-200 shadow-sm">
         <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
           <button
@@ -157,55 +187,68 @@ export default function RecipeDetail({ recipeId, onBack, onEdit, category = 'mak
             <ArrowLeft className="w-5 h-5" />
             <span className="font-medium">Kembali</span>
           </button>
-          {/* Action Buttons */}
-          {onEdit && (
-            <div className="flex gap-2">
-              <button
-                onClick={() => {
-                  console.log('Edit button clicked in RecipeDetail');
-                  console.log('Recipe ID:', recipeId);
-                  console.log('onEdit function:', onEdit);
-                  onEdit(recipeId);
-                }}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                <Edit className="w-4 h-4" />
-                <span className="hidden md:inline">Edit</span>
-              </button>
-              <button
-                onClick={() => setShowDeleteModal(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-              >
-                <Trash2 className="w-4 h-4" />
-                <span className="hidden md:inline">Hapus</span>
-              </button>
-            </div>
-          )}
+          <div className="flex gap-2">
+            <button
+              onClick={handleShare}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                copied
+                  ? 'bg-green-600 text-white'
+                  : 'bg-gray-700 text-white hover:bg-gray-800'
+              }`}
+            >
+              {copied ? (
+                <>
+                  <Check className="w-4 h-4" />
+                  <span className="hidden md:inline">Disalin!</span>
+                </>
+              ) : (
+                <>
+                  <Share2 className="w-4 h-4" />
+                  <span className="hidden md:inline">Bagikan</span>
+                </>
+              )}
+            </button>
+            
+            {onEdit && (
+              <>
+                <button
+                  onClick={() => onEdit(recipeId)}
+                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  <Edit className="w-4 h-4" />
+                  <span className="hidden md:inline">Edit</span>
+                </button>
+                <button
+                  onClick={() => setShowDeleteModal(true)}
+                  className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  <span className="hidden md:inline">Hapus</span>
+                </button>
+              </>
+            )}
+          </div>
         </div>
       </div>
       <main className="max-w-5xl mx-auto px-4 py-8">
-        {/* Recipe Header */}
         <div className="bg-white/60 backdrop-blur-sm rounded-3xl overflow-hidden shadow-xl border border-white/40 mb-8">
-          {/* Hero Image */}
           <div className="relative h-64 md:h-96 overflow-hidden">
             <img
-              src={recipe.image_url}
+              src={recipe.image_url || undefined}
               alt={recipe.name}
+              loading="lazy"
               className="w-full h-full object-cover"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-            {/* Favorite Button Use component */}
             <div className="absolute top-4 right-4 z-10">
-              <FavoriteButton recipeId={recipeId} size="lg" />
+              <FavoriteButton recipeId={recipe.id} size="lg" />
             </div>
-            {/* Category Badge */}
             <div className="absolute bottom-4 left-4">
-              <span className={`${colors.text} ${colors.bg} px-4 py-2 rounded-full text-sm font-semibold`}>
-                {category === 'makanan' ? 'Makanan' : 'Minuman'}
+              <span className={`${colors.text} ${colors.bg} px-4 py-2 rounded-full text-sm font-semibold capitalize`}>
+                {recipe.category}
               </span>
             </div>
           </div>
-          {/* Recipe Info */}
           <div className="p-6 md:p-8">
             <h1 className="text-3xl md:text-4xl font-bold text-slate-800 mb-4">
               {recipe.name}
@@ -215,7 +258,6 @@ export default function RecipeDetail({ recipeId, onBack, onEdit, category = 'mak
                 {recipe.description}
               </p>
             )}
-            {/* Stats Grid */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="bg-white/70 backdrop-blur p-4 rounded-xl border border-white/60 text-center">
                 <Clock className={`w-6 h-6 mx-auto mb-2 text-${colors.primary}-600`} />
@@ -240,7 +282,6 @@ export default function RecipeDetail({ recipeId, onBack, onEdit, category = 'mak
                 </p>
               </div>
             </div>
-            {/* Rating */}
             {recipe.average_rating > 0 && (
               <div className="mt-6 flex items-center gap-4 bg-amber-50 border border-amber-200 rounded-xl p-4">
                 <div className="flex items-center gap-1">
@@ -267,9 +308,7 @@ export default function RecipeDetail({ recipeId, onBack, onEdit, category = 'mak
             )}
           </div>
         </div>
-        {/* Ingredients & Steps */}
         <div className="grid md:grid-cols-2 gap-8 mb-8">
-          {/* Ingredients */}
           <div className="bg-white/60 backdrop-blur-sm rounded-3xl p-6 md:p-8 shadow-xl border border-white/40">
             <h2 className="text-2xl font-bold text-slate-800 mb-6 flex items-center gap-3">
               <div className={`w-10 h-10 rounded-full bg-${colors.primary}-100 flex items-center justify-center`}>
@@ -292,7 +331,6 @@ export default function RecipeDetail({ recipeId, onBack, onEdit, category = 'mak
               ))}
             </ul>
           </div>
-          {/* Steps */}
           <div className="bg-white/60 backdrop-blur-sm rounded-3xl p-6 md:p-8 shadow-xl border border-white/40">
             <h2 className="text-2xl font-bold text-slate-800 mb-6 flex items-center gap-3">
               <div className={`w-10 h-10 rounded-full bg-${colors.primary}-100 flex items-center justify-center`}>
@@ -317,7 +355,6 @@ export default function RecipeDetail({ recipeId, onBack, onEdit, category = 'mak
             </ol>
           </div>
         </div>
-        {/* Reviews Section */}
         <div className="bg-white/60 backdrop-blur-sm rounded-3xl p-6 md:p-8 shadow-xl border border-white/40">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold text-slate-800">
@@ -330,7 +367,6 @@ export default function RecipeDetail({ recipeId, onBack, onEdit, category = 'mak
               {showReviewForm ? 'Batal' : 'Tulis Ulasan'}
             </button>
           </div>
-          {/* Review Form */}
           {showReviewForm && (
             <form onSubmit={handleSubmitReview} className="mb-8 bg-white/70 rounded-2xl p-6 border border-white/60">
               <div className="mb-4">
@@ -378,7 +414,6 @@ export default function RecipeDetail({ recipeId, onBack, onEdit, category = 'mak
               </button>
             </form>
           )}
-          {/* Reviews List */}
           <div className="space-y-4">
             {reviewsLoading ? (
               <div className="text-center py-8">

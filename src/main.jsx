@@ -1,5 +1,5 @@
 // src/main.jsx
-import { StrictMode, useState, lazy, Suspense } from 'react' // <-- MODIFIKASI: Tambahkan lazy & Suspense
+import { StrictMode, useState, lazy, Suspense, useEffect } from 'react' // <-- MODIFIKASI: Tambahkan useEffect
 import { createRoot } from 'react-dom/client'
 import SplashScreen from './pages/SplashScreen';
 // Impor statis untuk komponen UI utama
@@ -8,7 +8,7 @@ import MobileNavbar from './components/navbar/MobileNavbar';
 import './index.css'
 import PWABadge from './PWABadge';
 
-// --- TAMBAHAN: Komponen fallback untuk lazy loading ---
+// --- Komponen fallback untuk lazy loading ---
 function LoadingFallback() {
   return (
     <div className="min-h-screen flex items-center justify-center">
@@ -17,7 +17,7 @@ function LoadingFallback() {
   );
 }
 
-// --- MODIFIKASI: Ubah impor halaman menjadi lazy ---
+// --- Impor halaman lazy ---
 const HomePage = lazy(() => import('./pages/HomePage'));
 const MakananPage = lazy(() => import('./pages/MakananPage'));
 const MinumanPage = lazy(() => import('./pages/MinumanPage'));
@@ -38,6 +38,24 @@ function AppRoot() {
     setShowSplash(false);
   };
 
+  // --- TAMBAHAN: useEffect untuk menangani deep link (share) ---
+  useEffect(() => {
+    // Hanya jalankan ini satu kali setelah splash screen selesai
+    if (!showSplash) { 
+      const urlParams = new URLSearchParams(window.location.search);
+      const recipeIdFromUrl = urlParams.get('recipeId');
+
+      if (recipeIdFromUrl) {
+        // Jika ada recipeId di URL, langsung buka halaman detail
+        handleRecipeClick(recipeIdFromUrl); // handleRecipeClick akan mengatur mode dan ID
+        
+        // Hapus query param dari URL agar terlihat bersih
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+    }
+  }, [showSplash]); // Dijalankan saat showSplash berubah
+
+  
   const handleNavigation = (page) => {
     setCurrentPage(page);
     setMode('list');
@@ -51,6 +69,8 @@ function AppRoot() {
 
   const handleRecipeClick = (recipeId, category) => {
     setSelectedRecipeId(recipeId);
+    // Jika 'category' tidak disediakan (dari URL), default ke 'currentPage' (yaitu 'home')
+    // Ini tidak masalah, karena RecipeDetail akan fetch data lengkap termasuk kategori aslinya
     setSelectedCategory(category || currentPage);
     setMode('detail');
   };
@@ -71,7 +91,6 @@ function AppRoot() {
   const handleCreateSuccess = (newRecipe) => {
     alert('Resep berhasil dibuat!');
     setMode('list');
-    // Optionally navigate to the new recipe's category
     if (newRecipe && newRecipe.category) {
       setCurrentPage(newRecipe.category);
     }
@@ -83,6 +102,7 @@ function AppRoot() {
   };
 
   const renderCurrentPage = () => {
+    // ... (Logika renderCurrentPage tidak berubah)
     // Show Create Recipe Page
     if (mode === 'create') {
       return (
@@ -129,7 +149,6 @@ function AppRoot() {
         return <MinumanPage 
           onRecipeClick={handleRecipeClick} />;
       case 'profile':
-        // --- MODIFIKASI: Teruskan onRecipeClick ---
         return <ProfilePage 
           onRecipeClick={handleRecipeClick} />;
       default:
@@ -146,7 +165,6 @@ function AppRoot() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Only show navbar in list mode */}
       {mode === 'list' && (
         <>
           <DesktopNavbar 
@@ -162,7 +180,6 @@ function AppRoot() {
         </>
       )}
       
-      {/* --- MODIFIKASI: Bungkus <main> dengan <Suspense> --- */}
       <Suspense fallback={<LoadingFallback />}>
         <main className="min-h-screen">
           {renderCurrentPage()}
