@@ -1,6 +1,10 @@
 // src/pages/ProfilePage.jsx
 import { useState, useEffect, useRef } from 'react';
-import { Users, User, Hash, Edit, Save, X, Camera, RefreshCw, Trash2 } from 'lucide-react'; 
+import { Users, User, Hash, Edit, Save, X, Camera, RefreshCw, Trash2, Heart } from 'lucide-react'; 
+
+// --- TAMBAHAN: Impor hook favorit dan grid ---
+import { useFavorites } from '../hooks/useFavorites';
+import RecipeGrid from '../components/makanan/RecipeGrid';
 
 // Kunci untuk localStorage (tidak berubah)
 const STORAGE_KEY = 'groupProfileInfo';
@@ -13,10 +17,18 @@ const initialMembers = [
   { name: "Muhammad Ilham", nim: "21120123120003", avatar: null }
 ];
 
-export default function ProfilePage() {
+// --- MODIFIKASI: Terima prop onRecipeClick ---
+export default function ProfilePage({ onRecipeClick }) {
   const [members, setMembers] = useState(initialMembers);
   const [isEditing, setIsEditing] = useState(false);
   const fileInputRefs = useRef([]);
+
+  // --- TAMBAHAN: Panggil hook useFavorites ---
+  const { 
+    favorites, 
+    loading: favoritesLoading, 
+    error: favoritesError 
+  } = useFavorites();
 
   // --- Semua fungsi logic (useEffect, handleInputChange, dll) tetap sama ---
   // Load data dari localStorage
@@ -107,7 +119,7 @@ export default function ProfilePage() {
     // 1. Wrapper Utama: Gunakan gradien tema dan padding atas (pt-16/pt-24) untuk navbar
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 p-4 md:p-8 pt-16 md:pt-24 pb-20 md:pb-8">
       
-      {/* 2. Kontainer Pembatas Lebar */}
+      {/* 2. Kontainer Pembatas Lebar (Profil Kelompok) */}
       <div className="max-w-3xl mx-auto">
         
         {/* 3. Judul Halaman (di luar card) - Konsisten dengan Halaman Lain */}
@@ -255,6 +267,50 @@ export default function ProfilePage() {
             ))}
           </div>
         </div>
+      </div>
+
+      {/* --- TAMBAHAN: Bagian Resep Favorit --- */}
+      <div className="max-w-5xl mx-auto mt-16">
+        <h1 className="text-3xl md:text-5xl font-bold text-slate-800 text-center mb-4">
+          Resep Favorit Saya
+        </h1>
+        <p className="text-slate-600 text-center mb-8 md:mb-12">
+          Resep yang telah Anda simpan.
+        </p>
+
+        {favoritesLoading && (
+          <div className="text-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
+            <p className="mt-4 text-gray-600">Memuat resep favorit...</p>
+          </div>
+        )}
+
+        {favoritesError && (
+          <div className="text-center py-12">
+            <div className="bg-red-50 border border-red-200 rounded-lg p-6">
+              <p className="text-red-600 font-semibold mb-2">Terjadi Kesalahan</p>
+              <p className="text-red-500">{favoritesError}</p>
+            </div>
+          </div>
+        )}
+
+        {!favoritesLoading && !favoritesError && (
+          <>
+            {favorites.length === 0 ? (
+              <div className="text-center py-16 flex flex-col items-center">
+                 <Heart size={48} className="text-red-300 mb-4" strokeWidth={1.5} />
+                <p className="text-slate-500 text-lg">Anda belum memiliki resep favorit.</p>
+                <p className="text-slate-400 mt-2">Klik ikon hati pada resep untuk menambahkannya.</p>
+              </div>
+            ) : (
+              // Menggunakan kembali RecipeGrid dari 'makanan' untuk styling
+              <RecipeGrid 
+                recipes={favorites} 
+                onRecipeClick={onRecipeClick} 
+              />
+            )}
+          </>
+        )}
       </div>
     </div>
   );

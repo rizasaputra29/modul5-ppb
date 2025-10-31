@@ -1,18 +1,30 @@
 // src/main.jsx
-import { StrictMode, useState } from 'react'
+import { StrictMode, useState, lazy, Suspense } from 'react' // <-- MODIFIKASI: Tambahkan lazy & Suspense
 import { createRoot } from 'react-dom/client'
 import SplashScreen from './pages/SplashScreen';
-import HomePage from './pages/HomePage';
-import MakananPage from './pages/MakananPage';
-import MinumanPage from './pages/MinumanPage';
-import ProfilePage from './pages/ProfilePage';
-import CreateRecipePage from './pages/CreateRecipePage';
-import EditRecipePage from './pages/EditRecipePage';
-import RecipeDetail from './components/recipe/RecipeDetail';
+// Impor statis untuk komponen UI utama
 import DesktopNavbar from './components/navbar/DesktopNavbar';
 import MobileNavbar from './components/navbar/MobileNavbar';
 import './index.css'
 import PWABadge from './PWABadge';
+
+// --- TAMBAHAN: Komponen fallback untuk lazy loading ---
+function LoadingFallback() {
+  return (
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+    </div>
+  );
+}
+
+// --- MODIFIKASI: Ubah impor halaman menjadi lazy ---
+const HomePage = lazy(() => import('./pages/HomePage'));
+const MakananPage = lazy(() => import('./pages/MakananPage'));
+const MinumanPage = lazy(() => import('./pages/MinumanPage'));
+const ProfilePage = lazy(() => import('./pages/ProfilePage'));
+const CreateRecipePage = lazy(() => import('./pages/CreateRecipePage'));
+const EditRecipePage = lazy(() => import('./pages/EditRecipePage'));
+const RecipeDetail = lazy(() => import('./components/recipe/RecipeDetail'));
 
 function AppRoot() {
   const [showSplash, setShowSplash] = useState(true);
@@ -117,6 +129,7 @@ function AppRoot() {
         return <MinumanPage 
           onRecipeClick={handleRecipeClick} />;
       case 'profile':
+        // --- MODIFIKASI: Teruskan onRecipeClick ---
         return <ProfilePage 
           onRecipeClick={handleRecipeClick} />;
       default:
@@ -149,10 +162,12 @@ function AppRoot() {
         </>
       )}
       
-      {/* Main Content */}
-      <main className="min-h-screen">
-        {renderCurrentPage()}
-      </main>
+      {/* --- MODIFIKASI: Bungkus <main> dengan <Suspense> --- */}
+      <Suspense fallback={<LoadingFallback />}>
+        <main className="min-h-screen">
+          {renderCurrentPage()}
+        </main>
+      </Suspense>
       
       <PWABadge />
     </div>
